@@ -1,0 +1,8 @@
+{
+  "cSpell.words": [
+    "fecha"
+  ],
+  "adr.project.directory": "doc\\adr",
+  "adr.templates.directory": ".adr-templates",
+  "adr.templates.repo": "https://github.com/vincent-ledu/adr-template.git"
+}
