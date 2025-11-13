@@ -13,12 +13,14 @@ import {
   dataResponseSuccess,
   ResponseDTO,
 } from 'src/shared/dto/response.dto';
+import { KafkaProducerService } from 'src/infraestructura/adapters/services/kafka-producer.service';
 
 @Injectable()
 export class EspaciosService {
   constructor(
     @Inject('EspaciosRepositoryPort')
     private readonly espaciosRepository: EspaciosRepositoryPort,
+    private readonly kafkaProducer: KafkaProducerService,
   ) {}
 
   async createEspacios(params: {
@@ -51,6 +53,28 @@ export class EspaciosService {
 
       const espacio = await this.espaciosRepository.createEspacio(espacios);
 
+      // Publicar evento de creación
+      try {
+        await this.kafkaProducer.publishEspacioEvent({
+          type: 'CREATED',
+          data: {
+            id: espacio.id,
+            nombre: espacio.nombre,
+            tipoEspacioId: espacio.tipoEspacioId,
+            descripcion: espacio.descripcion,
+            capacidad: espacio.capacidad.getValue(),
+            tarifaHora: espacio.tarifaHora,
+            tarifaDia: espacio.tarifaDia,
+            estado: espacio.estado,
+            creadoEn: espacio.creadoEn,
+            timestamp: new Date(),
+          },
+        });
+      } catch (kafkaError) {
+        console.error('Error publicando evento Kafka:', kafkaError.message);
+        // No fallar la operación si Kafka falla
+      }
+
       return dataResponseSuccess({ data: espacio });
     } catch (error) {
       return dataResponseError(error.message);
@@ -82,6 +106,28 @@ export class EspaciosService {
       const espacioUdpate =
         await this.espaciosRepository.updateEspacio(espacios);
 
+      // Publicar evento de actualización
+      try {
+        await this.kafkaProducer.publishEspacioEvent({
+          type: 'UPDATED',
+          data: {
+            id: espacioUdpate.id,
+            nombre: espacioUdpate.nombre,
+            tipoEspacioId: espacioUdpate.tipoEspacioId,
+            descripcion: espacioUdpate.descripcion,
+            capacidad: espacioUdpate.capacidad.getValue(),
+            tarifaHora: espacioUdpate.tarifaHora,
+            tarifaDia: espacioUdpate.tarifaDia,
+            estado: espacioUdpate.estado,
+            creadoEn: espacioUdpate.creadoEn,
+            timestamp: new Date(),
+          },
+        });
+      } catch (kafkaError) {
+        console.error('Error publicando evento Kafka:', kafkaError.message);
+        // No fallar la operación si Kafka falla
+      }
+
       return dataResponseSuccess({ data: espacioUdpate });
     } catch (error) {
       return dataResponseError(error.message);
@@ -91,6 +137,29 @@ export class EspaciosService {
   async deleteEspacios(id: number): Promise<ResponseDTO<any>> {
     try {
       const esDelete = await this.espaciosRepository.deleteEspacio(id);
+
+      // Publicar evento de eliminación
+      try {
+        await this.kafkaProducer.publishEspacioEvent({
+          type: 'DELETED',
+          data: {
+            id: esDelete.id,
+            nombre: esDelete.nombre,
+            tipoEspacioId: esDelete.tipoEspacioId,
+            descripcion: esDelete.descripcion,
+            capacidad: esDelete.capacidad.getValue(),
+            tarifaHora: esDelete.tarifaHora,
+            tarifaDia: esDelete.tarifaDia,
+            estado: esDelete.estado,
+            creadoEn: esDelete.creadoEn,
+            timestamp: new Date(),
+          },
+        });
+      } catch (kafkaError) {
+        console.error('Error publicando evento Kafka:', kafkaError.message);
+        // No fallar la operación si Kafka falla
+      }
+
       return dataResponseSuccess({ data: esDelete });
     } catch (error) {
       return dataResponseError(error.message);

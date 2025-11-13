@@ -13,6 +13,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Espacios {
+  id            Int       @id
+  nombre        String
+  tipoEspacioId Int
+  descripcion   String?
+  capacidad     Int
+  tarifaHora    Float
+  tarifaDia     Float
+  estado        Int       @default(1)
+  creadoEn      DateTime? @default(now())
+  actualizadoEn DateTime? @updatedAt
+
+  reservaciones Reservaciones[]
+}
+
 model TiposReservacion {
   id            Int       @id @default(autoincrement())
   nombre        String
@@ -40,4 +55,5 @@ model Reservaciones {
   actualizadoEn DateTime? @updatedAt
 
   tiposReservacion TiposReservacion @relation(fields: [estadoReservacionId], references: [id])
+  espacios         Espacios         @relation(fields: [espacioId], references: [id])
 }

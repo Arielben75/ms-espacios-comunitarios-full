@@ -1,6 +1,72 @@
 version: '3.8'
 
 services:
+  # Zookeeper para coordinar el cluster de Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    restart: unless-stopped
+    container_name: zookeeper
+    networks:
+      - backend
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Kafka Broker
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    restart: unless-stopped
+    container_name: kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    networks:
+      - backend
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_CLEANUP_POLICY: delete
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # Servicio para inicializar topics en Kafka
+  kafka-init:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - backend
+    entrypoint: >
+      sh -c "
+      echo 'Esperando a que Kafka esté listo...'
+      sleep 10
+      echo 'Creando topics...'
+      kafka-topics --create --bootstrap-server kafka:9092 --topic espacios-events --partitions 1 --replication-factor 1 --if-not-exists &&
+      kafka-topics --create --bootstrap-server kafka:9092 --topic reservaciones-events --partitions 1 --replication-factor 1 --if-not-exists &&
+      echo 'Topics creados exitosamente'
+      "
+
   dba:
     image: postgres:15
     restart: unless-stopped
@@ -51,6 +117,8 @@ services:
     depends_on:
       dba:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
     container_name: espacios-comunitarios-app
     ports:
       - "3000:3000"
@@ -64,6 +132,8 @@ services:
        ENV_SWAGGER_SHOW: ${ENV_SWAGGER_SHOW}
        ENV_APP_NAME: ${ENV_APP_NAME}
        JWT_SECRET: ${JWT_SECRET}
+       KAFKA_BROKERS: kafka:29092
+       KAFKA_CLIENT_ID: espacios-producer
     command: ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api || exit 1"]
@@ -80,6 +150,8 @@ services:
     depends_on:
       dba:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
     container_name: espacios-comunitarios-app2
     ports:
       - "3001:3000"
@@ -93,6 +165,8 @@ services:
        ENV_SWAGGER_SHOW: ${ENV_SWAGGER_SHOW}
        ENV_APP_NAME: ${ENV_APP_NAME}
        JWT_SECRET: ${JWT_SECRET}
+       KAFKA_BROKERS: kafka:29092
+       KAFKA_CLIENT_ID: espacios-producer-2
     command: ["sh", "-c", "npm run start:prod"]
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api"]
@@ -125,8 +199,8 @@ services:
     depends_on:
       dbb:
         condition: service_healthy
-      proxy:
-        condition: service_started
+      kafka-init:
+        condition: service_completed_successfully
     container_name: reserva-comunitarios-app
     ports:
       - "3002:3000"
@@ -140,6 +214,8 @@ services:
        ENV_SWAGGER_SHOW: ${ENV_SWAGGER_SHOW}
        ENV_APP_NAME: ${ENV_APP_NAME}
        JWT_SECRET: ${JWT_SECRET}
+       KAFKA_BROKERS: kafka:29092
+       KAFKA_CLIENT_ID: reservaciones-consumer
     command: ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api"]
