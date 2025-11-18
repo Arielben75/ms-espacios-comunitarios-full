@@ -62,7 +62,9 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
         eachMessage: this.handleMessage.bind(this),
       });
       this.isConnected = true;
-      console.log('✓ Kafka Consumer conectado y escuchando eventos de espacios');
+      console.log(
+        '✓ Kafka Consumer conectado y escuchando eventos de espacios',
+      );
     } catch (error) {
       console.error('✗ Error al conectar Kafka Consumer:', error.message);
       throw error;
@@ -80,6 +82,12 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
   private async handleMessage(payload: EachMessagePayload): Promise<void> {
     try {
       const { topic, partition, message } = payload;
+
+      if (!message || !message.value) {
+        console.warn('⚠ Mensaje sin valor recibido, ignorando');
+        return;
+      }
+
       const event: EspacioEvent = JSON.parse(message.value.toString());
 
       console.log(
@@ -107,7 +115,9 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async handleEspacioCreated(data: EspacioEvent['data']): Promise<void> {
+  private async handleEspacioCreated(
+    data: EspacioEvent['data'],
+  ): Promise<void> {
     try {
       // Verificar si el espacio ya existe en la BD local
       const existing = await this.prisma.espacios.findUnique({
@@ -130,7 +140,9 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
         });
         console.log(`✓ Espacio sincronizado: ${data.nombre} (ID: ${data.id})`);
       } else {
-        console.log(`ℹ Espacio ya existe en BD: ${data.nombre} (ID: ${data.id})`);
+        console.log(
+          `ℹ Espacio ya existe en BD: ${data.nombre} (ID: ${data.id})`,
+        );
       }
     } catch (error) {
       console.error('✗ Error al sincronizar espacio creado:', error.message);
@@ -138,7 +150,9 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async handleEspacioUpdated(data: EspacioEvent['data']): Promise<void> {
+  private async handleEspacioUpdated(
+    data: EspacioEvent['data'],
+  ): Promise<void> {
     try {
       await this.prisma.espacios.update({
         where: { id: data.id },
@@ -168,7 +182,9 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async handleEspacioDeleted(data: EspacioEvent['data']): Promise<void> {
+  private async handleEspacioDeleted(
+    data: EspacioEvent['data'],
+  ): Promise<void> {
     try {
       await this.prisma.espacios.update({
         where: { id: data.id },
@@ -177,7 +193,9 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
           actualizadoEn: new Date(),
         },
       });
-      console.log(`✓ Espacio marcado como inactivo: ${data.nombre} (ID: ${data.id})`);
+      console.log(
+        `✓ Espacio marcado como inactivo: ${data.nombre} (ID: ${data.id})`,
+      );
     } catch (error) {
       console.error('✗ Error al desactivar espacio:', error.message);
       throw error;

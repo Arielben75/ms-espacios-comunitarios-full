@@ -1,0 +1,133 @@
+{
+  "realm": "espacios-reservas-realm",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": true,
+  "rememberMe": true,
+  "verifyEmail": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 300,
+  "accessTokenLifespanForImplicitFlow": 900,
+  "accessCodeLifespan": 60,
+  "accessCodeLifespanUserAction": 300,
+  "actionTokenGeneratedByAdminLifespan": 43200,
+  "actionTokenGeneratedByUserLifespan": 300,
+  "revokeRefreshToken": false,
+  "clients": [
+    {
+      "clientId": "espacios-client",
+      "name": "Espacios Comunitarios Client",
+      "description": "OAuth2 Client for Espacios Comunitarios Service",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "espacios-client-secret-12345",
+      "redirectUris": [
+        "http://localhost:3000/api/auth/callback",
+        "http://localhost:3000/*",
+        "http://espacios-comunitarios-app:3000/*",
+        "http://espacios-comunitarios-app:3000/api/auth/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "http://espacios-comunitarios-app:3000",
+        "http://espacios-comunitarios-app2:3000",
+        "http://reserva-comunitarios-app:3000"
+      ],
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "reservaciones-client",
+      "name": "Reservaciones Client",
+      "description": "OAuth2 Client for Reservaciones Service",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "reservaciones-client-secret-12345",
+      "redirectUris": [
+        "http://localhost:3002/api/auth/callback",
+        "http://localhost:3002/*",
+        "http://reserva-comunitarios-app:3000/*",
+        "http://reserva-comunitarios-app:3000/api/auth/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:3002",
+        "http://reserva-comunitarios-app:3000"
+      ],
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect"
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "Administrator role",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "user",
+        "description": "User role",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "guest",
+        "description": "Guest role",
+        "composite": false,
+        "clientRole": false
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "admin",
+      "email": "admin@espacios.com",
+      "firstName": "Admin",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["admin", "user"]
+    },
+    {
+      "username": "testuser",
+      "email": "testuser@espacios.com",
+      "firstName": "Test",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "testuser123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"]
+    }
+  ]
+}

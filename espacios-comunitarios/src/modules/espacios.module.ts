@@ -5,6 +5,8 @@ import { DataBaseModule } from 'src/modules/database.module';
 import { EspaciosController } from 'src/presentacion/controller/espacios.controller';
 import { KafkaProducerService } from 'src/infraestructura/adapters/services/kafka-producer.service';
 import { ConfigModule } from '@nestjs/config';
+import { OAuth2Service } from 'src/infraestructura/adapters/services/oauth2.service';
+import { MicroserviceHttpClient } from 'src/infraestructura/adapters/services/microservice-http-client.service';
 
 @Module({
   imports: [DataBaseModule, ConfigModule],
@@ -12,8 +14,10 @@ import { ConfigModule } from '@nestjs/config';
   providers: [
     EspaciosService,
     KafkaProducerService,
+    OAuth2Service,
+    MicroserviceHttpClient,
     { provide: 'EspaciosRepositoryPort', useClass: EspaciosRepository },
   ],
-  exports: [KafkaProducerService],
+  exports: [KafkaProducerService, OAuth2Service, MicroserviceHttpClient],
 })
 export class EspaciosModule {}

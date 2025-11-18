@@ -6,6 +6,8 @@ import { ReservacionesRespository } from 'src/infraestructura/adapters/repositor
 import { MsEspaciosRepository } from 'src/infraestructura/adapters/repositories/espacios.repository';
 import { KafkaConsumerService } from 'src/infraestructura/adapters/services/kafka-consumer.service';
 import { ConfigModule } from '@nestjs/config';
+import { OAuth2Service } from 'src/infraestructura/adapters/services/oauth2.service';
+import { MicroserviceHttpClient } from 'src/infraestructura/adapters/services/microservice-http-client.service';
 
 @Module({
   imports: [DataBaseModule, ConfigModule],
@@ -13,12 +15,19 @@ import { ConfigModule } from '@nestjs/config';
   providers: [
     ReservacionService,
     KafkaConsumerService,
+    OAuth2Service,
+    MicroserviceHttpClient,
     { provide: 'MsEspaciosRepositoryPort', useClass: MsEspaciosRepository },
     {
       provide: 'ReservacionRepositoryPort',
       useClass: ReservacionesRespository,
     },
   ],
-  exports: [ReservacionService, 'MsEspaciosRepositoryPort'],
+  exports: [
+    ReservacionService,
+    'MsEspaciosRepositoryPort',
+    OAuth2Service,
+    MicroserviceHttpClient,
+  ],
 })
 export class ReservacionesModule {}

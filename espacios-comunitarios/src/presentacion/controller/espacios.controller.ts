@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   HttpStatus,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import {
@@ -15,6 +16,7 @@ import {
 } from '../decorators/controller.decorator';
 import { CreateEspaciosDto, FilterEspaciosDto } from '../dtos/espacios.dto';
 import { EspaciosService } from 'src/aplicacion/services/espacios.service';
+import { OAuth2Guard } from 'src/presentacion/guards/oauth2.guard';
 
 @ApiTags('[Espacios] Espacios'.toUpperCase())
 @Controller('espaciops')
@@ -22,6 +24,7 @@ export class EspaciosController {
   constructor(private readonly espaciosService: EspaciosService) {}
 
   @Post('registrar')
+  @UseGuards(OAuth2Guard)
   @BearerAuthToken()
   @VersionDescription('1', 'Servico para crear de un espacio Comunitario')
   async register(@Body() registerDto: CreateEspaciosDto) {
@@ -36,6 +39,7 @@ export class EspaciosController {
   }
 
   @Patch('update/:id')
+  @UseGuards(OAuth2Guard)
   @BearerAuthToken()
   @VersionDescription('1', 'Servico para actualizar un espacio comunitario')
   updateUsuarios(
@@ -60,6 +64,7 @@ export class EspaciosController {
   }
 
   @Delete('delete/:id')
+  @UseGuards(OAuth2Guard)
   @BearerAuthToken()
   @VersionDescription('1', 'Servico para eliminar un espacio comunitario')
   deleteUsuarios(
@@ -75,6 +80,7 @@ export class EspaciosController {
   }
 
   @Post('list')
+  @UseGuards(OAuth2Guard)
   @BearerAuthToken()
   @VersionDescription('1', 'Servico para listar los espacios comunitarios')
   listadoUsuarios(@Body() body: FilterEspaciosDto) {

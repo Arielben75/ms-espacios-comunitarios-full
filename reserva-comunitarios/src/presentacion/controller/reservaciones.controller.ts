@@ -20,6 +20,7 @@ import {
   DisponibilidadQueryDto,
   UpdateReservacionDto,
 } from '../dtos/reservaciones.dto';
+import { OAuth2Guard } from 'src/presentacion/guards/oauth2.guard';
 
 @ApiTags('[reservaciones] reservaciones'.toUpperCase())
 @Controller('reservaciones')
@@ -27,7 +28,7 @@ export class ReservacionController {
   constructor(private readonly reservationService: ReservacionService) {}
 
   @Post('/validar-horas')
-  @BearerAuthToken()
+  //@BearerAuthToken()
   @VersionDescription('1', 'Servico para validar horas de reserva')
   @ApiOperation({ summary: 'Validar y crear una nueva reservación' })
   @ApiResponse({ status: 201, description: 'Reservación creada exitosamente' })
@@ -44,7 +45,7 @@ export class ReservacionController {
   }
 
   @Get('/usuario/:usuarioId')
-  @BearerAuthToken()
+  //@BearerAuthToken()
   @VersionDescription('1', 'Obtener reservaciones por usuario')
   @ApiOperation({ summary: 'Obtener todas las reservaciones de un usuario' })
   async obtenerReservacionesPorUsuario(@Param('usuarioId') usuarioId: number) {
@@ -54,6 +55,7 @@ export class ReservacionController {
   }
 
   @Get('/espacio/:espacioId')
+  @UseGuards(OAuth2Guard)
   @BearerAuthToken()
   @VersionDescription('1', 'Obtener reservaciones por espacio')
   @ApiOperation({ summary: 'Obtener todas las reservaciones de un espacio' })
@@ -73,6 +75,7 @@ export class ReservacionController {
   }
 
   @Get('/:id')
+  @UseGuards(OAuth2Guard)
   @BearerAuthToken()
   @VersionDescription('1', 'Obtener reservación por ID')
   @ApiOperation({ summary: 'Obtener una reservación específica' })
@@ -81,6 +84,7 @@ export class ReservacionController {
   }
 
   @Patch('/:id')
+  @UseGuards(OAuth2Guard)
   @BearerAuthToken()
   @VersionDescription('1', 'Modificar reservación')
   @ApiOperation({ summary: 'Modificar una reservación existente' })
@@ -101,6 +105,7 @@ export class ReservacionController {
   }
 
   @Delete('/:id')
+  @UseGuards(OAuth2Guard)
   @BearerAuthToken()
   @VersionDescription('1', 'Cancelar reservación')
   @ApiOperation({ summary: 'Cancelar una reservación' })
@@ -114,6 +119,7 @@ export class ReservacionController {
   }
 
   @Get('/disponibilidad/verificar')
+  @UseGuards(OAuth2Guard)
   @BearerAuthToken()
   @VersionDescription('1', 'Verificar disponibilidad de espacio')
   @ApiOperation({
@@ -128,6 +134,7 @@ export class ReservacionController {
   }
 
   @Get('/reporte/rango-fecha')
+  @UseGuards(OAuth2Guard)
   @BearerAuthToken()
   @VersionDescription('1', 'Obtener reservaciones por rango de fechas')
   @ApiOperation({ summary: 'Obtener reservaciones en un rango de fechas' })

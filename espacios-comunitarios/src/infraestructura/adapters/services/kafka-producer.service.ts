@@ -44,7 +44,6 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
 
     this.producer = this.kafka.producer({
       transactionTimeout: 30000,
-      timeout: 30000,
       maxInFlightRequests: 1,
     });
   }

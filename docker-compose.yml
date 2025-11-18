@@ -57,15 +57,71 @@ services:
         condition: service_healthy
     networks:
       - backend
-    entrypoint: >
-      sh -c "
-      echo 'Esperando a que Kafka esté listo...'
-      sleep 10
-      echo 'Creando topics...'
-      kafka-topics --create --bootstrap-server kafka:9092 --topic espacios-events --partitions 1 --replication-factor 1 --if-not-exists &&
-      kafka-topics --create --bootstrap-server kafka:9092 --topic reservaciones-events --partitions 1 --replication-factor 1 --if-not-exists &&
-      echo 'Topics creados exitosamente'
-      "
+    command: bash -c 'sleep 20 && kafka-topics --create --bootstrap-server kafka:29092 --topic espacios-events --partitions 1 --replication-factor 1 --if-not-exists && kafka-topics --create --bootstrap-server kafka:29092 --topic reservaciones-events --partitions 1 --replication-factor 1 --if-not-exists && kafka-topics --list --bootstrap-server kafka:29092 && sleep 5'
+
+  # PostgreSQL para Keycloak
+  keycloak-db:
+    image: postgres:15
+    restart: unless-stopped
+    container_name: keycloak-db
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${KEYCLOAK_DB_USER}
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      POSTGRES_DB: ${KEYCLOAK_DB_NAME}
+    ports:
+      - "5434:5432"
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KEYCLOAK_DB_USER} -d ${KEYCLOAK_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Keycloak - OAuth2/OIDC Server
+  keycloak:
+    image: keycloak/keycloak:23.0.7
+    restart: unless-stopped
+    container_name: keycloak
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    networks:
+      - backend
+    ports:
+      - "8180:8080"
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/${KEYCLOAK_DB_NAME}
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_PROXY: edge
+      KC_PROXY_ADDRESS_FORWARDING: 'true'
+      KC_HTTP_ENABLED: 'true'
+      KC_HTTP_RELATIVE_PATH: /
+      KC_METRICS_ENABLED: 'true'
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8180
+      KC_HOSTNAME_STRICT: 'false'
+      KC_HOSTNAME_STRICT_HTTPS: 'false'
+    command:
+      - "start"
+      - "--import-realm"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && echo 'OK'"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
 
   dba:
     image: postgres:15
@@ -110,7 +166,10 @@ services:
       retries: 5
 
   service-a1:
-    image: arielben75/espacios-comunitarios:latest
+    #image: arielben75/espacios-comunitarios:latest
+    build:
+      context: ./espacios-comunitarios
+      dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
       - .env
@@ -119,6 +178,8 @@ services:
         condition: service_healthy
       kafka-init:
         condition: service_completed_successfully
+      keycloak:
+        condition: service_healthy
     container_name: espacios-comunitarios-app
     ports:
       - "3000:3000"
@@ -134,7 +195,12 @@ services:
        JWT_SECRET: ${JWT_SECRET}
        KAFKA_BROKERS: kafka:29092
        KAFKA_CLIENT_ID: espacios-producer
-    command: ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
+       KEYCLOAK_URL: ${KEYCLOAK_URL}
+       KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+       SERVICE_B_URL: ${SERVICE_B_URL}
+    command: ["sh", "-c", "sleep 30 && npx prisma migrate deploy && npm run start:prod"]
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api || exit 1"]
       interval: 30s
@@ -143,7 +209,10 @@ services:
       start_period: 60s
 
   service-a2:
-    image: arielben75/espacios-comunitarios:latest
+    #image: arielben75/espacios-comunitarios:latest
+    build:
+      context: ./espacios-comunitarios
+      dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
       - .env
@@ -152,6 +221,8 @@ services:
         condition: service_healthy
       kafka-init:
         condition: service_completed_successfully
+      keycloak:
+        condition: service_healthy
     container_name: espacios-comunitarios-app2
     ports:
       - "3001:3000"
@@ -167,7 +238,12 @@ services:
        JWT_SECRET: ${JWT_SECRET}
        KAFKA_BROKERS: kafka:29092
        KAFKA_CLIENT_ID: espacios-producer-2
-    command: ["sh", "-c", "npm run start:prod"]
+       KEYCLOAK_URL: ${KEYCLOAK_URL}
+       KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+       SERVICE_B_URL: ${SERVICE_B_URL}
+    command: ["sh", "-c", "sleep 35 && npm run start:prod"]
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api"]
       interval: 30s
@@ -192,7 +268,10 @@ services:
       - backend
 
   service-b:
-    image: arielben75/reserva-comunitarios:latest
+    #image: arielben75/reserva-comunitarios:latest
+    build:
+      context: ./reserva-comunitarios
+      dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
       - .env
@@ -201,6 +280,8 @@ services:
         condition: service_healthy
       kafka-init:
         condition: service_completed_successfully
+      keycloak:
+        condition: service_healthy
     container_name: reserva-comunitarios-app
     ports:
       - "3002:3000"
@@ -216,7 +297,12 @@ services:
        JWT_SECRET: ${JWT_SECRET}
        KAFKA_BROKERS: kafka:29092
        KAFKA_CLIENT_ID: reservaciones-consumer
-    command: ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
+       KEYCLOAK_URL: ${KEYCLOAK_URL}
+       KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+       SERVICE_A_URL: ${SERVICE_A_URL}
+    command: ["sh", "-c", "sleep 40 && npx prisma migrate deploy && npm run start:prod"]
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api"]
       interval: 30s
@@ -247,4 +333,5 @@ networks:
 volumes:
   dba_data:
   dbb_data:
+  keycloak_db_data:
   shared_data:
