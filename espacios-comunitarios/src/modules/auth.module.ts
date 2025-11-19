@@ -5,6 +5,8 @@ import { DataBaseModule } from 'src/modules/database.module';
 import { AuthController } from 'src/presentacion/controller/auth.controller';
 import { AuthService } from 'src/aplicacion/services/auth.service';
 import { UserRepository } from 'src/infraestructura/adapters/repositories/user.repository';
+import { KeycloakAuthService } from 'src/infraestructura/adapters/services/keycloak-auth.service';
+import { OAuth2Service } from 'src/infraestructura/adapters/services/oauth2.service';
 
 @Module({
   imports: [
@@ -20,18 +22,15 @@ import { UserRepository } from 'src/infraestructura/adapters/repositories/user.r
       inject: [ConfigService],
     }),
   ],
-  
-  controllers: [
-    AuthController,
-  ],
+
+  controllers: [AuthController],
   providers: [
     AuthService,
-    {provide:'UserRepositoryPort',useClass: UserRepository},
+    OAuth2Service,
+    KeycloakAuthService,
+    { provide: 'UserRepositoryPort', useClass: UserRepository },
   ],
-  
-  exports: [
-    AuthService,
-    'UserRepositoryPort',
-  ],
+
+  exports: [AuthService, 'UserRepositoryPort', OAuth2Service],
 })
 export class AuthModule {}

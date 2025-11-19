@@ -1,7 +1,9 @@
 import { Reservacion } from 'src/dominio/entities/reservacion.entity';
 import { ReservacionRepositoryPort } from 'src/dominio/ports/repositories/reservacion-repository.port';
 import { PrismaService } from 'src/infraestructura/database/prima.service';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class ReservacionesRespository implements ReservacionRepositoryPort {
   constructor(private readonly prisma: PrismaService) {}
 
@@ -227,6 +229,20 @@ export class ReservacionesRespository implements ReservacionRepositoryPort {
     });
 
     return reservations.map(this.toDomain);
+  }
+
+  async createTiposReserva(reservation: any): Promise<Reservacion> {
+    try {
+      const createdReservation = await this.prisma.tiposReservacion.create({
+        data: {
+          nombre: reservation.nombre,
+        },
+      });
+
+      return this.toDomain(createdReservation);
+    } catch (error) {
+      throw new Error(`Error al crear la reservación: ${error.message}`);
+    }
   }
 
   private toDomain(reservation: any): Reservacion {

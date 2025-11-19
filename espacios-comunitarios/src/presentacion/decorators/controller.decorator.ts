@@ -1,10 +1,17 @@
-import { ExecutionContext, UnauthorizedException, UseGuards, Version, applyDecorators, createParamDecorator } from '@nestjs/common';
+import {
+  ExecutionContext,
+  UnauthorizedException,
+  UseGuards,
+  Version,
+  applyDecorators,
+  createParamDecorator,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { TokenAuthGuard } from 'src/presentacion/guards/token-auth.guard';
 
 export const BearerAuthToken = () => {
-  return applyDecorators(UseGuards(TokenAuthGuard), ApiBearerAuth());
+  return applyDecorators(UseGuards(TokenAuthGuard), ApiBearerAuth('bearer'));
 };
 
 export const VersionDescription = (version: string, summary: string) => {

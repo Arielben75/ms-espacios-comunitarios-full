@@ -77,6 +77,7 @@ export class EspaciosService {
 
       return dataResponseSuccess({ data: espacio });
     } catch (error) {
+      console.log(error);
       return dataResponseError(error.message);
     }
   }
@@ -186,6 +187,19 @@ export class EspaciosService {
 
       return dataResponseFormat(result);
     } catch (error) {
+      return dataResponseError(error.message);
+    }
+  }
+
+  async createTiposEspacios(params: {
+    nombre: string;
+    descripcion: string;
+  }): Promise<ResponseDTO<Espacios>> {
+    try {
+      const espacio = await this.espaciosRepository.createTiposEspacio(params);
+      return dataResponseSuccess({ data: espacio });
+    } catch (error) {
+      console.log(error);
       return dataResponseError(error.message);
     }
   }

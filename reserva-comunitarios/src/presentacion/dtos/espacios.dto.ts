@@ -1,12 +1,23 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { Expose, Transform, TransformFnParams, Type } from "class-transformer";
-import { IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, Length } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import { Expose, Transform, TransformFnParams, Type } from 'class-transformer';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsString,
+  Length,
+} from 'class-validator';
 
 export class CreateEspaciosDto {
   @Expose()
-  @Transform(({ value }: TransformFnParams) => value ? value.toString().trim() || null: value )
+  @Transform(({ value }: TransformFnParams) =>
+    value ? value.toString().trim() || null : value,
+  )
   @Type(() => String)
-  @Length(2, 100, { message: 'El nombre debe ser de mas de 2 caracteres asta un maximo de 100' })
+  @Length(2, 100, {
+    message: 'El nombre debe ser de mas de 2 caracteres asta un maximo de 100',
+  })
   @IsString({ message: 'El nombre debe estar en formato string' })
   @IsNotEmpty({ message: 'El nombre no debe estar vacio' })
   @ApiProperty({ description: 'nombre del espacio', required: true })
@@ -25,9 +36,14 @@ export class CreateEspaciosDto {
   tipoEspacioId: number;
 
   @Expose()
-  @Transform(({ value }: TransformFnParams) => value ? value.toString().trim() || null: value )
+  @Transform(({ value }: TransformFnParams) =>
+    value ? value.toString().trim() || null : value,
+  )
   @Type(() => String)
-  @Length(2, 100, { message: 'El descripcion debe ser de mas de 2 caracteres asta un maximo de 100' })
+  @Length(2, 100, {
+    message:
+      'El descripcion debe ser de mas de 2 caracteres asta un maximo de 100',
+  })
   @IsString({ message: 'El descripcion debe estar en formato string' })
   @IsOptional()
   @ApiProperty({ description: 'descripcion del espacio', required: false })
@@ -72,7 +88,9 @@ export class CreateEspaciosDto {
 
 export class WhereEspaciosDto {
   @Expose()
-  @Transform(({ value }: TransformFnParams) => (value ? value.toString().trim() : value))
+  @Transform(({ value }: TransformFnParams) =>
+    value ? value.toString().trim() : value,
+  )
   @Type(() => String)
   @Length(2, 500, { message: 'el nombre debe ser de mas de 2 caracteres' })
   @IsString({ message: 'el nombre debe ser tipo string' })
@@ -147,7 +165,7 @@ export class FilterEspaciosDto {
     description: 'direccion de ordenamiento.',
     required: false,
   })
-  orderDirection: "asc" | "desc";
+  orderDirection: 'asc' | 'desc';
 
   @Expose()
   @IsObject({ message: 'where debe ser un objeto' })
@@ -158,4 +176,19 @@ export class FilterEspaciosDto {
     type: WhereEspaciosDto,
   })
   where: WhereEspaciosDto;
+}
+
+export class CreateTiposReservaDto {
+  @Expose()
+  @Transform(({ value }: TransformFnParams) =>
+    value ? value.toString().trim() || null : value,
+  )
+  @Type(() => String)
+  @Length(2, 100, {
+    message: 'El nombre debe ser de mas de 2 caracteres asta un maximo de 100',
+  })
+  @IsString({ message: 'El nombre debe estar en formato string' })
+  @IsNotEmpty({ message: 'El nombre no debe estar vacio' })
+  @ApiProperty({ description: 'nombre del espacio', required: true })
+  nombre: string;
 }

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/infraestructura/database/prima.service';
 import { Espacios } from 'src/dominio/entities/espacios.entity';
+import { Capacidad } from 'src/dominio/value-objects/capacidad.vo';
 import {
   EspaciosListOptions,
   EspaciosRepositoryPort,
@@ -209,13 +210,27 @@ export class EspaciosRepository implements EspaciosRepositoryPort {
     }
   }
 
+  async createTiposEspacio(espacio: any): Promise<any> {
+    const espcios = await this.prisma.tiposEspacios.create({
+      data: {
+        nombre: espacio.nombre,
+        descripcion: espacio.descripcion,
+      },
+    });
+    return espcios;
+  }
+
   private toDomain(space: any): Espacios {
+    const capacidadVO = Capacidad.validateMaxCapacidad(
+      space.capacidad,
+      space.capacidad,
+    );
     return new Espacios(
       space.id,
       space.nombre,
       space.tipoEspacioId,
       space.descripcion,
-      space.capacidad,
+      capacidadVO,
       space.tarifaHora,
       space.tarifaDia,
       space.estado,

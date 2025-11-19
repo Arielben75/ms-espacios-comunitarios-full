@@ -31,4 +31,5 @@ export interface ReservacionRepositoryPort {
     to: Date,
     espacioId?: number,
   ): Promise<Reservacion[]>;
+  createTiposReserva(params: any): Promise<any>;
 }

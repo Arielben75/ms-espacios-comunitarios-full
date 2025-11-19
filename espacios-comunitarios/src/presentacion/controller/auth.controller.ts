@@ -1,9 +1,27 @@
-import { Controller, Post, Body, Patch, Param, ParseIntPipe, HttpStatus, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Patch,
+  Param,
+  ParseIntPipe,
+  HttpStatus,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from '../../aplicacion/services/auth.service';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { loginDto } from '../dtos/auth.dto';
-import { BearerAuthToken, VersionDescription } from '../decorators/controller.decorator';
-import { CreateUsuariosDto, FilterDto, UpdateUsuariosDto } from '../dtos/usuarios.dto';
+import {
+  BearerAuthToken,
+  VersionDescription,
+} from '../decorators/controller.decorator';
+import {
+  CreateUsuariosDto,
+  FilterDto,
+  UpdateUsuariosDto,
+} from '../dtos/usuarios.dto';
+import { OAuth2Guard } from '../guards/oauth2.guard';
 
 @ApiTags('[auth] Usuarios'.toUpperCase())
 @Controller('auth')
@@ -16,7 +34,7 @@ export class AuthController {
   }
 
   @Post('registrar')
-  @VersionDescription('1','Servico para crear de los Usuarios')
+  @VersionDescription('1', 'Servico para crear de los Usuarios')
   async register(@Body() registerDto: CreateUsuariosDto) {
     return await this.authService.register(
       registerDto.email,
@@ -32,19 +50,19 @@ export class AuthController {
   }
 
   @Patch('update/:id')
-  @BearerAuthToken()
-  @VersionDescription(
-    '1',
-    'Servico para actualizar de los Usuarios',
-  )
-  updateUsuarios(@Param(
-    'id',
-    new ParseIntPipe({
-      errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-    }),
-  )
-  id: number,
-  @Body() body:CreateUsuariosDto) {
+  @ApiBearerAuth('bearer')
+  @UseGuards(OAuth2Guard)
+  @VersionDescription('1', 'Servico para actualizar de los Usuarios')
+  updateUsuarios(
+    @Param(
+      'id',
+      new ParseIntPipe({
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
+    )
+    id: number,
+    @Body() body: CreateUsuariosDto,
+  ) {
     return this.authService.updateUsuarios(
       id,
       body.email,
@@ -55,31 +73,30 @@ export class AuthController {
       body.fechaNacimiento,
       body.nacionalidad,
       body.userName,
-      body.celular,);
+      body.celular,
+    );
   }
 
   @Delete('delete/:id')
-  @BearerAuthToken()
-  @VersionDescription(
-    '1',
-    'Servico para eliminar de los Usuarios',
-  )
-  deleteUsuarios(@Param(
-    'id',
-    new ParseIntPipe({
-      errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-    }),
-  )
-  id: number,) {
+  @ApiBearerAuth('bearer')
+  @UseGuards(OAuth2Guard)
+  @VersionDescription('1', 'Servico para eliminar de los Usuarios')
+  deleteUsuarios(
+    @Param(
+      'id',
+      new ParseIntPipe({
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      }),
+    )
+    id: number,
+  ) {
     return this.authService.deleteUser(id);
   }
 
   @Post('list')
-  @BearerAuthToken()
-  @VersionDescription(
-    '1',
-    'Servico para crear de los Usuarios',
-  )
+  @ApiBearerAuth('bearer')
+  @UseGuards(OAuth2Guard)
+  @VersionDescription('1', 'Servico para crear de los Usuarios')
   listadoUsuarios(@Body() body: FilterDto) {
     return this.authService.listUsuarios(body);
   }

@@ -7,6 +7,7 @@ import {
 import { Reservacion } from 'src/dominio/entities/reservacion.entity';
 import { ReservacionRepositoryPort } from 'src/dominio/ports/repositories/reservacion-repository.port';
 import { EspaciosRepositoryPort } from 'src/dominio/ports/repositories/espacios-repository.port';
+import { CreateTiposReservaDto } from 'src/presentacion/dtos/espacios.dto';
 
 @Injectable()
 export class ReservacionService {
@@ -223,6 +224,23 @@ export class ReservacionService {
         );
 
       return dataResponseSuccess({ data: reservaciones });
+    } catch (error) {
+      return dataResponseError(error.message);
+    }
+  }
+
+  async registroTiposReserva(
+    params: CreateTiposReservaDto,
+  ): Promise<ResponseDTO<any>> {
+    try {
+      const reservacionCreada =
+        await this.reservacionesPort.createTiposReserva(params);
+
+      if (!reservacionCreada) {
+        return dataResponseError('No se pudo crear el tipo reservación');
+      }
+
+      return dataResponseSuccess({ data: reservacionCreada });
     } catch (error) {
       return dataResponseError(error.message);
     }

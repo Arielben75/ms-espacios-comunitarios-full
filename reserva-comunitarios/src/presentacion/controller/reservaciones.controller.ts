@@ -10,7 +10,12 @@ import {
   Delete,
 } from '@nestjs/common';
 import { ReservacionService } from '../../aplicacion/services/reservacion.service';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import {
   BearerAuthToken,
   VersionDescription,
@@ -21,6 +26,7 @@ import {
   UpdateReservacionDto,
 } from '../dtos/reservaciones.dto';
 import { OAuth2Guard } from 'src/presentacion/guards/oauth2.guard';
+import { CreateTiposReservaDto } from '../dtos/espacios.dto';
 
 @ApiTags('[reservaciones] reservaciones'.toUpperCase())
 @Controller('reservaciones')
@@ -28,7 +34,8 @@ export class ReservacionController {
   constructor(private readonly reservationService: ReservacionService) {}
 
   @Post('/validar-horas')
-  //@BearerAuthToken()
+  @ApiBearerAuth('bearer')
+  @UseGuards(OAuth2Guard)
   @VersionDescription('1', 'Servico para validar horas de reserva')
   @ApiOperation({ summary: 'Validar y crear una nueva reservación' })
   @ApiResponse({ status: 201, description: 'Reservación creada exitosamente' })
@@ -45,7 +52,8 @@ export class ReservacionController {
   }
 
   @Get('/usuario/:usuarioId')
-  //@BearerAuthToken()
+  @ApiBearerAuth('bearer')
+  @UseGuards(OAuth2Guard)
   @VersionDescription('1', 'Obtener reservaciones por usuario')
   @ApiOperation({ summary: 'Obtener todas las reservaciones de un usuario' })
   async obtenerReservacionesPorUsuario(@Param('usuarioId') usuarioId: number) {
@@ -55,8 +63,8 @@ export class ReservacionController {
   }
 
   @Get('/espacio/:espacioId')
+  @ApiBearerAuth('bearer')
   @UseGuards(OAuth2Guard)
-  @BearerAuthToken()
   @VersionDescription('1', 'Obtener reservaciones por espacio')
   @ApiOperation({ summary: 'Obtener todas las reservaciones de un espacio' })
   async obtenerReservacionesPorEspacio(
@@ -75,8 +83,8 @@ export class ReservacionController {
   }
 
   @Get('/:id')
+  @ApiBearerAuth('bearer')
   @UseGuards(OAuth2Guard)
-  @BearerAuthToken()
   @VersionDescription('1', 'Obtener reservación por ID')
   @ApiOperation({ summary: 'Obtener una reservación específica' })
   async obtenerReservacionPorId(@Param('id') id: number) {
@@ -84,8 +92,8 @@ export class ReservacionController {
   }
 
   @Patch('/:id')
+  @ApiBearerAuth('bearer')
   @UseGuards(OAuth2Guard)
-  @BearerAuthToken()
   @VersionDescription('1', 'Modificar reservación')
   @ApiOperation({ summary: 'Modificar una reservación existente' })
   @ApiResponse({
@@ -105,8 +113,8 @@ export class ReservacionController {
   }
 
   @Delete('/:id')
+  @ApiBearerAuth('bearer')
   @UseGuards(OAuth2Guard)
-  @BearerAuthToken()
   @VersionDescription('1', 'Cancelar reservación')
   @ApiOperation({ summary: 'Cancelar una reservación' })
   @ApiResponse({
@@ -119,8 +127,8 @@ export class ReservacionController {
   }
 
   @Get('/disponibilidad/verificar')
+  @ApiBearerAuth('bearer')
   @UseGuards(OAuth2Guard)
-  @BearerAuthToken()
   @VersionDescription('1', 'Verificar disponibilidad de espacio')
   @ApiOperation({
     summary: 'Verificar si un espacio está disponible en un horario',
@@ -134,8 +142,8 @@ export class ReservacionController {
   }
 
   @Get('/reporte/rango-fecha')
+  @ApiBearerAuth('bearer')
   @UseGuards(OAuth2Guard)
-  @BearerAuthToken()
   @VersionDescription('1', 'Obtener reservaciones por rango de fechas')
   @ApiOperation({ summary: 'Obtener reservaciones en un rango de fechas' })
   async obtenerReservacionesPorRangoFecha(
@@ -147,6 +155,20 @@ export class ReservacionController {
       new Date(from),
       new Date(to),
       espacioId,
+    );
+  }
+
+  @Post('/tipos-reservacion')
+  @ApiBearerAuth('bearer')
+  @UseGuards(OAuth2Guard)
+  @VersionDescription('1', 'Servico para crear tipos de reservación')
+  @ApiOperation({ summary: 'Validar y crear una nueva reservación' })
+  @ApiResponse({ status: 201, description: 'Reservación creada exitosamente' })
+  async registroTiposReserva(
+    @Body() validarReservacionDto: CreateTiposReservaDto,
+  ) {
+    return await this.reservationService.registroTiposReserva(
+      validarReservacionDto,
     );
   }
 }

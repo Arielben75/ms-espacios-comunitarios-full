@@ -1,5 +1,9 @@
-import { INestApplication } from "@nestjs/common";
-import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from "@nestjs/swagger";
+import { INestApplication } from '@nestjs/common';
+import {
+  DocumentBuilder,
+  SwaggerCustomOptions,
+  SwaggerModule,
+} from '@nestjs/swagger';
 import * as os from 'os';
 import { bold } from 'chalk';
 
@@ -39,7 +43,16 @@ export const configSwagger = (
     .setDescription(packageJson.description)
     .setContact(packageJson.contact.name, '', packageJson.contact.email)
     .setLicense(packageJson.license, packageJson.contact.email)
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Token JWT obtenido del login (Keycloak)',
+        in: 'header',
+      },
+      'bearer', // El nombre de la seguridad
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, documentBuilder);
@@ -61,7 +74,7 @@ const getLocalIP = (port = 3000): string | null => {
   for (const interfaceName in interfaces) {
     const addresses = interfaces[interfaceName];
     if (addresses) {
-      for (const iface of addresses ) {
+      for (const iface of addresses) {
         if (iface.family === 'IPv4' && !iface.internal) {
           return `http://${iface.address}:${port}`;
         }
@@ -74,7 +87,9 @@ const getLocalIP = (port = 3000): string | null => {
 export const printServerInitLog = async (
   app: INestApplication,
   packageJson: IPackageJson,
-  options: { route?: string; appName?: string; port?: number } = { route: 'api' },
+  options: { route?: string; appName?: string; port?: number } = {
+    route: 'api',
+  },
 ) => {
   const port = options?.port ?? app.getHttpServer().address().port;
   const server = getLocalIP(port) ?? (await app.getUrl());

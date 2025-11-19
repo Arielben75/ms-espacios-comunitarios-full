@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/infraestructura/database/prima.service';
 import { Espacios } from 'src/dominio/entities/espacios.entity';
+import { Capacidad } from 'src/dominio/value-objects/capacidad.vo';
 import {
   EspaciosListOptions,
   EspaciosRepositoryPort,
@@ -9,18 +10,17 @@ import { PaginationResult } from 'src/shared/dto/interface';
 
 @Injectable()
 export class MsEspaciosRepository implements EspaciosRepositoryPort {
-  constructor() {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll(): Promise<Espacios[]> {
-    const spaces = []; /* await this.prisma.espacios.findMany({
+    const spaces = await this.prisma.espacios.findMany({
       where: { estado: 1 },
-    }); */
+    });
     return spaces.map(this.toDomain);
   }
 
   async findById(id: number): Promise<Espacios | null> {
-    const space =
-      []; /* await this.prisma.espacios.findUnique({ where: { id } }); */
+    const space = await this.prisma.espacios.findUnique({ where: { id } });
     return space ? this.toDomain(space) : null;
   }
 
@@ -212,12 +212,16 @@ export class MsEspaciosRepository implements EspaciosRepositoryPort {
   }
 
   private toDomain(space: any): Espacios {
+    const capacidadVO = Capacidad.validateMaxCapacidad(
+      space.capacidad,
+      space.capacidad,
+    );
     return new Espacios(
       space.id,
       space.nombre,
       space.tipoEspacioId,
       space.descripcion,
-      space.capacidad,
+      capacidadVO,
       space.tarifaHora,
       space.tarifaDia,
       space.estado,

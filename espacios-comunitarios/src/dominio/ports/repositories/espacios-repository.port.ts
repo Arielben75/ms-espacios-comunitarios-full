@@ -18,4 +18,5 @@ export interface EspaciosRepositoryPort {
   updateEspacio(espacio: Espacios): Promise<Espacios>;
   deleteEspacio(id: number): Promise<Espacios>;
   listar(list: EspaciosListOptions): Promise<PaginationResult<Espacios>>;
+  createTiposEspacio(espacio: any): Promise<any>;
 }

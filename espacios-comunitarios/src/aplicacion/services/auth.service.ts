@@ -18,6 +18,7 @@ import * as bcrypt from 'bcrypt';
 import { Password } from 'src/dominio/value-objects/password.vo';
 import { ListUsuariosDto } from 'src/presentacion/interfaces/user-filter';
 import { PaginationResult } from 'src/shared/dto/interface';
+import { KeycloakAuthService } from 'src/infraestructura/adapters/services/keycloak-auth.service';
 import { UserSearchCriteria } from 'src/dominio/value-objects/user-filter.vo';
 
 @Injectable()
@@ -26,6 +27,7 @@ export class AuthService {
     @Inject('UserRepositoryPort')
     private readonly userRepository: UserRepositoryPort,
     private readonly jwtService: JwtService,
+    private readonly keycloakAuthService: KeycloakAuthService,
   ) {}
 
   async register(
@@ -43,6 +45,14 @@ export class AuthService {
       const existingUser = await this.userRepository.findByEmail(email);
       if (existingUser) return dataResponseError('El usuario ya existe');
 
+      // Crear usuario en Keycloak primero
+      await this.keycloakAuthService.createKeycloakUser(
+        email,
+        password,
+        nombres,
+        primerApellido + ' ' + segundoApellido,
+      );
+
       const user = User.create(
         email,
         password,
@@ -57,37 +67,36 @@ export class AuthService {
       );
       const hashedPassword = await this.hashPassword(user._password);
       user._password.setValue(hashedPassword);
-      const usuario = await this.userRepository.update(user);
+      const usuario = await this.userRepository.create(user);
       return dataResponseSuccess({ data: usuario });
     } catch (error) {
-      return dataResponseError(error.message);
+      // Si falla, intentar limpiar usuario de Keycloak si fue creado
+      return dataResponseError('Error en el registro: ' + error.message);
     }
   }
 
   async login(email: string, password: string): Promise<IResponse> {
     try {
+      // Verificar que el usuario existe en BD local
       const usuario = await this.userRepository.findByEmail(email);
-      if (
-        !usuario /*  || !await this.verifyPassword(password, user.password) */
-      )
+      if (!usuario) {
         return dataResponseError('El usuario no existe');
+      }
 
-      const comparePasword = await this.verifyPassword(
+      // Autenticar con Keycloak
+      const keycloakResponse = await this.keycloakAuthService.authenticateUser(
+        email,
         password,
-        usuario.password,
       );
-      if (!comparePasword)
-        return dataResponseError('La contraseña es incorrecta.', {
-          status: 401,
-        });
 
-      const token = await this.generateJWT(usuario);
       return dataResponseSuccess({
         data: {
           userName: usuario.userName,
           email: usuario.email,
-          token: token.response.data.token,
-          tokenRefresh: token.response.data.tokenRefresh,
+          token: keycloakResponse.access_token,
+          tokenRefresh: keycloakResponse.refresh_token,
+          expiresIn: keycloakResponse.expires_in,
+          tokenType: keycloakResponse.token_type,
         },
       });
     } catch (error) {
@@ -109,7 +118,7 @@ export class AuthService {
   ): Promise<ResponseDTO<User>> {
     try {
       const existingUser = await this.userRepository.findByEmail(email);
-      if (existingUser) return dataResponseError('El usuario ya existe');
+      //if (existingUser) return dataResponseError('El usuario ya existe');
 
       const user = User.update(
         id,
